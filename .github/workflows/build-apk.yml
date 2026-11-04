@@ -26,7 +26,7 @@ jobs:
           gradle-version: '8.9'
       - name: Build Kotlin APK
         run: gradle --no-daemon :app:assembleDebug
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: NMEA-Bridge-Android-Kotlin-v0.2.0-APK
           path: app/build/outputs/apk/debug/app-debug.apk
@@ -61,7 +61,7 @@ jobs:
             --out "$SIGNED" "$ALIGNED"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$SIGNED"
           rm -f "$RUNNER_TEMP/nmea-bridge-release.p12" "$ALIGNED"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: steps.signing.outputs.configured == 'true'
         with:
           name: NMEA-Bridge-signed-release-APK
