@@ -24,15 +24,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.3.1'
-      - name: Build Kotlin APK
-        run: gradle --no-daemon :app:assembleDebug
-      - uses: actions/upload-artifact@v6
-        with:
-          name: NMEA-Bridge-Android-Kotlin-v0.2.0-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-      - name: Build and sign release APK (only if signing secrets are configured)
-        id: signing
+      - name: Build and sign release APK
         shell: bash
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -40,11 +32,9 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_SIGNING_PASSWORD" ]]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "Signing secrets not present; continuing with the original debug APK build."
-            exit 0
+            echo "::error::Release signing secrets are missing. Configure ANDROID_KEYSTORE_BASE64 and ANDROID_SIGNING_PASSWORD."
+            exit 1
           fi
-          echo "configured=true" >> "$GITHUB_OUTPUT"
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/nmea-bridge-release.p12"
           chmod 600 "$RUNNER_TEMP/nmea-bridge-release.p12"
           gradle --no-daemon :app:assembleRelease
@@ -62,7 +52,6 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$SIGNED"
           rm -f "$RUNNER_TEMP/nmea-bridge-release.p12" "$ALIGNED"
       - uses: actions/upload-artifact@v6
-        if: steps.signing.outputs.configured == 'true'
         with:
           name: NMEA-Bridge-signed-release-APK
           path: app/build/outputs/apk/release/NMEA-Bridge-Android-signed.apk
